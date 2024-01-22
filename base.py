@@ -1,7 +1,7 @@
 import os
 import bson
 # import json
-import torch
+# import torch
 import PyPDF2
 import pickle
 # from icecream import ic
@@ -10,7 +10,7 @@ from bson.binary import Binary
 from dotenv import load_dotenv
 # from collections import Counter
 from multipledispatch import dispatch
-from torch.multiprocessing import Pool
+# from torch.multiprocessing import Pool
 from txtai.embeddings import Embeddings
 # from moviepy.editor import VideoFileClip
 # from db import MongoDB
@@ -21,7 +21,7 @@ __author__ = "Kedar"
 __version__ = "0.1"
 
 load_dotenv()
-torch.device("cuda:0")
+# torch.device("cuda:0")
 # class VideoProcessor:
 #     def __init__(self):
 #         self.videoData: list = list()
@@ -262,22 +262,22 @@ class Vectorizer:
     
     
 
-    def process_document(self, doc: dict, query_lower: str, exact_phrase: bool) -> dict:
-        text_lower = doc.get('text', '').lower()  # For documents
-        transcription_lower = doc.get(
-            'transcription', '').lower()  # For videos
+    # def process_document(self, doc: dict, query_lower: str, exact_phrase: bool) -> dict:
+    #     text_lower = doc.get('text', '').lower()  # For documents
+    #     transcription_lower = doc.get(
+    #         'transcription', '').lower()  # For videos
 
-        if exact_phrase:
-            if (doc['type'] == 'document' and query_lower == text_lower) or \
-                    (doc['type'] == 'video' and query_lower == transcription_lower):
-                return doc
-        else:
-            # Split the query into individual words
-            query_words = query_lower.split()
-            # Check if all query words are present in the document's text or transcription
-            if all(word in text_lower for word in query_words) and doc['type'] == 'document':
-                return doc
-            elif all(word in transcription_lower for word in query_words) and doc['type'] == 'video':
-                return doc
+    #     if exact_phrase:
+    #         if (doc['type'] == 'document' and query_lower == text_lower) or \
+    #                 (doc['type'] == 'video' and query_lower == transcription_lower):
+    #             return doc
+    #     else:
+    #         # Split the query into individual words
+    #         query_words = query_lower.split()
+    #         # Check if all query words are present in the document's text or transcription
+    #         if all(word in text_lower for word in query_words) and doc['type'] == 'document':
+    #             return doc
+    #         elif all(word in transcription_lower for word in query_words) and doc['type'] == 'video':
+    #             return doc
 
-        return None
+    #     return None

@@ -1,0 +1,11 @@
+__pycache__
+.vscode
+.env
+app.ipynb
+dbconnector.py
+excess.py
+saver.py
+test.py
+test.ipynb
+main.py
+/data

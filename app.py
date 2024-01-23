@@ -36,7 +36,7 @@ def display_data(query, results):
             st.subheader("Score")
     with st.container():
         for number, name, score in zip(data["Number"],data["Names"], data["Score"]):
-            file_path =f"https://github.com/Kedar-dave/IntelliDocSearch/tree/main/resume-dataset/{name}"
+            file_path =f"./resume-dataset/{name}"
             with col1:
                 st.markdown(str(number) + ":: " + name + " -------->")
                 

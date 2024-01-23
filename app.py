@@ -2,20 +2,25 @@ import streamlit as st
 from base import DocumentProcessor,Vectorizer
 
 @st.cache_data
-def main():
+def load_data():
     data = DocumentProcessor()
     data.load_pdf("resume_data")
+    st.session_state.pdf = data.pdfData
     st.session_state.vector = Vectorizer(data.pdfData)
     st.session_state.vector.load_index("resume_data")
-    st.session_state.pdf = data.pdfData
     st.session_state.index = st.session_state.vector.embeddings
-main()
 
-def search_data(query,limit):
+load_data()
+
+def search_data(query, limit):
     st.divider()
     with st.spinner():
-        results = st.session_state.vector.semantic_search(query,limit,0.3)
-    display_data(query,results)
+        # Check if vector is initialized
+        if 'vector' not in st.session_state:
+            st.error("Vector is not initialized. Please run the main function.")
+            return
+        results = st.session_state.vector.semantic_search(query, limit, 0.3)
+    display_data(query, results)
 
 def display_data(query, results):
     st.subheader("Your Query: " + query)
@@ -36,7 +41,7 @@ def display_data(query, results):
             st.subheader("Score")
     with st.container():
         for number, name, score in zip(data["Number"],data["Names"], data["Score"]):
-            file_path =f"./resume-dataset/{name}"
+            file_path =f"https://github.com/Kedar-dave/IntelliDocSearch/tree/main/resume-dataset/{name}"
             with col1:
                 st.markdown(str(number) + ":: " + name + " -------->")
                 

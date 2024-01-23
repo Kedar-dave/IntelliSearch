@@ -2,7 +2,7 @@ import streamlit as st
 from base import DocumentProcessor,Vectorizer
 
 @st.cache_data
-def load_data():
+def main():
     data = DocumentProcessor()
     data.load_pdf("resume_data")
     st.session_state.pdf = data.pdfData
@@ -10,7 +10,7 @@ def load_data():
     st.session_state.vector.load_index("resume_data")
     st.session_state.index = st.session_state.vector.embeddings
 
-load_data()
+main()
 
 def search_data(query, limit):
     st.divider()

@@ -2,10 +2,13 @@ __pycache__
 .vscode
 .env
 app.ipynb
+cmds.txt
 dbconnector.py
 excess.py
+saver.ipynb
 saver.py
 test.py
 test.ipynb
 main.py
 /data
+.devcontainer

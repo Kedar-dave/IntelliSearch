@@ -189,7 +189,6 @@ class DocumentProcessor:
             pdfName: Name of the pdf file along with its extension ex:( demo.pdf )
             pdfFolderPath: Path of the folder containing the document 
         """
-        
         for doc in self.pdfData:
             if doc["name"] == pdfName:
                 break
@@ -231,6 +230,7 @@ class Vectorizer:
             })
         
         self.pdf = data
+    
     def add(self, data):
         for doc in data:
             pos = str(doc["_id"])
@@ -240,10 +240,12 @@ class Vectorizer:
         path = "./index/" + name
         self.embeddings.load(path)
         print("Index Loaded")
+    
     def save_index(self,name:str):
         os.makedirs('./index/', exist_ok=True)
         path = "./index/" + name
         self.embeddings.save(path)
+
     def index(self):
         self.embeddings.index(self.pdf)
     def semantic_search(self, query:str, limits:int = 50, cutoff:float = 0.0):

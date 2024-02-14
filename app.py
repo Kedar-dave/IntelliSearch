@@ -59,25 +59,13 @@ if search==True and cancel==False and bool(query)==True:
             st.subheader("Link")
         with col3:
             st.subheader("Score")
-    with open("queries.txt", "r") as file:
-        global noQueries
-        noQueries = int(file.read()) + 1
-        fileName = str(noQueries) + ' ' + query
-    with open(f"./log/{fileName}.txt", "w")as debugLogFile:
-        debugLogFile.write("Query:" + query + "\n")
-        debugLogFile.write("Number of Results:" + str(len(data["Names"])) + "\n")
-        debugLogFile.write("Results:\n")
-        with st.container():
-            for number, name, score in zip(data["Number"],data["Names"], data["Score"]):
-                file_path =f"https://github.com/Kedar-dave/IntelliDocSearch/tree/main/resume-dataset/{name}"
-                with col1:
-                    st.markdown(str(number) + ":: " + name + " -------->")
-                with col2:
-                    st.link_button(str(number) + "::"+"Open", file_path)
-                
-                with col3:
-                    st.write(f"{score:0,.3f}")
-                debugLogFile.write(file_path + f", Score:{score:0,.3f}" + "\n")
-    with open("queries.txt", "w") as file:
-        file.writelines(str(noQueries))
-
+    
+    with st.container():
+        for number, name, score in zip(data["Number"],data["Names"], data["Score"]):
+            file_path =f"https://github.com/Kedar-dave/IntelliDocSearch/tree/main/resume-dataset/{name}"
+            with col1:
+                st.markdown(str(number) + ":: " + name + " -------->")
+            with col2:
+                st.link_button(str(number) + "::"+"Open", file_path)
+            with col3:
+                st.write(f"{score:0,.3f}")

@@ -1,5 +1,5 @@
 import streamlit as st
-from processors import DocumentProcessor, Vectorizer 
+from base import DocumentProcessor, Vectorizer 
 st.set_page_config(
     page_title="Search App",
     page_icon="📱",

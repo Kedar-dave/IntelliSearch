@@ -1,57 +1,23 @@
 import streamlit as st
-from base import DocumentProcessor,Vectorizer
+from processors import DocumentProcessor, Vectorizer 
+st.set_page_config(
+    page_title="Search App",
+    page_icon="📱",
+    layout="wide",
+)
+@st.cache_resource
+def cache():
+    data_processor = DocumentProcessor()
+    data_processor.load_pdf("resume_data")
+    
+    vectorizer = Vectorizer()
+    vectorizer.load_index("resume_data")
 
-@st.cache_data
-def main():
-    data = DocumentProcessor()
-    data.load_pdf("resume_data")
-    st.session_state.pdf = data.pdfData
-    st.session_state.vector = Vectorizer(data.pdfData)
-    st.session_state.vector.load_index("resume_data")
-    st.session_state.index = st.session_state.vector.embeddings
+    return data_processor, vectorizer
 
-main()
-
-def search_data(query, limit):
-    st.divider()
-    with st.spinner():
-        # Check if vector is initialized
-        if 'vector' not in st.session_state:
-            st.error("Vector is not initialized. Please run the main function.")
-            return
-        results = st.session_state.vector.semantic_search(query, limit, 0.3)
-    display_data(query, results)
-
-def display_data(query, results):
-    st.subheader("Your Query: " + query)
-    st.subheader(f"Files Found: {len(results)}")
-    data = {
-        "Number": [i+1 for i in range(len(results))],
-        "Names":[st.session_state.pdf[res[0]]['name'] for res in results],
-        "Score":[res[1] for res in results]
-    }
-    print(f"No of Results:{len(data['Names'])}")
-    col1, col2, col3 = st.columns([1,1,1])
-    with st.container():
-        with col1:
-            st.subheader("Pdf Name")
-        with col2:
-            st.subheader("Link")
-        with col3:
-            st.subheader("Score")
-    with st.container():
-        for number, name, score in zip(data["Number"],data["Names"], data["Score"]):
-            file_path =f"https://github.com/Kedar-dave/IntelliDocSearch/tree/main/resume-dataset/{name}"
-            with col1:
-                st.markdown(str(number) + ":: " + name + " -------->")
-                
-            with col2:
-            
-                st.link_button(str(number) + "::"+"Open", file_path)
-                
-            with col3:
-                st.write(f"{score:0,.3f}")
-                
+data_processor, vectorizer = cache()
+st.session_state.data_processor = data_processor
+st.session_state.vectorizer = vectorizer
 
 
 st.title("Search Your PDF 📝")
@@ -73,5 +39,45 @@ with col2:
                                     label_visibility="collapsed")
 
 if search==True and cancel==False and bool(query)==True:
-    print(f"Query:{query}")
-    search_data(query,limit)
+    st.divider()
+    with st.spinner():  
+        results = st.session_state.vectorizer.semantic_search(query, limit, False)
+
+    st.subheader("Your Query: " + query)
+    st.subheader(f"Files Found: {len(results)}")
+    data = {
+        "Number": [i+1 for i in range(len(results))],
+        "Names":[st.session_state.data_processor.pdfData[res[0]]['name'] for res in results],
+        "Score":[res[1] for res in results]
+    }
+    print(f"Query:{query} " + f"Results:{len(data['Names'])}")
+    col1, col2, col3 = st.columns([1,1,1])
+    with st.container():
+        with col1:
+            st.subheader("Pdf Name")
+        with col2:
+            st.subheader("Link")
+        with col3:
+            st.subheader("Score")
+    with open("queries.txt", "r") as file:
+        global noQueries
+        noQueries = int(file.read()) + 1
+        fileName = str(noQueries) + ' ' + query
+    with open(f"./log/{fileName}.txt", "w")as debugLogFile:
+        debugLogFile.write("Query:" + query + "\n")
+        debugLogFile.write("Number of Results:" + str(len(data["Names"])) + "\n")
+        debugLogFile.write("Results:\n")
+        with st.container():
+            for number, name, score in zip(data["Number"],data["Names"], data["Score"]):
+                file_path =f"https://github.com/Kedar-dave/IntelliDocSearch/tree/main/resume-dataset/{name}"
+                with col1:
+                    st.markdown(str(number) + ":: " + name + " -------->")
+                with col2:
+                    st.link_button(str(number) + "::"+"Open", file_path)
+                
+                with col3:
+                    st.write(f"{score:0,.3f}")
+                debugLogFile.write(file_path + f", Score:{score:0,.3f}" + "\n")
+    with open("queries.txt", "w") as file:
+        file.writelines(str(noQueries))
+

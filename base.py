@@ -224,12 +224,11 @@ class DocumentProcessor:
 
 class Vectorizer:
 
-    def __init__(self, data):
+    def __init__(self):
         self.embeddings = Embeddings({
                 "path": "sentence-transformers/all-mpnet-base-v2",
             })
         
-        self.pdf = data
     
     def add(self, data):
         for doc in data:

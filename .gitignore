@@ -1,0 +1,10 @@
+__pycache__
+.vscode
+.env
+*temp*
+index/
+cache/
+data/
+*resume-dataset*/
+ans/
+streamlit_app.py

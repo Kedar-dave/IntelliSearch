@@ -1,1 +1,0 @@
-# A Project which applies semantic searching capabilities to a given dataset of pdfs

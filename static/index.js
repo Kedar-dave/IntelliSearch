@@ -46,6 +46,7 @@ uploadButton.addEventListener('click', function () {
     var files = fileInput.files;
     var formData = new FormData();
     if (files.length == 0) {
+        loadingScreen.classList.add('hidden');
         alert("No Files to Upload!");
         return;
     } else {
@@ -260,7 +261,7 @@ function displaySearchResults(data) {
         var queryLogDiv = document.createElement('div');
         queryLogDiv.classList.add('text-2xl', 'text-center', 'text-white-500', 'bg-gray-700');
         queryLogDiv.innerHTML = `Query: ${queryLog}`
-        
+
         var tableDiv = document.createElement('div');
         tableDiv.classList.add('w-full', 'table-container'); // Add 'table-container' class
 

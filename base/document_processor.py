@@ -1,23 +1,22 @@
 import os
-from io import BufferedReader
-import PyPDF2
 import pickle
-from .mime_types import MimeType
+import PyPDF2
 from bson import ObjectId
+from io import BufferedReader
+from base import MimeType, file_finder,text_cleaning
 
-from base.util import file_finder,text_cleaning
 class DocumentProcessor:
 
     def __init__(self):
         self.pdfData: list = list()
-        self.pdfList: list = list()
+        self.pdfs: list = list()
 
     def __set_pdf_data(self, name: str, text: str, pdf, pages: int ):
 
         uid = ObjectId()
         pdfDataObj = {
             "_id": uid,
-            "text": text,
+            "text": name + text,
         }
         pdfObj = {
             "_id": uid,
@@ -26,7 +25,7 @@ class DocumentProcessor:
             "file": pdf,
             "pages": pages
         }
-        self.pdfList.append(pdfObj)
+        self.pdfs.append(pdfObj)
         self.pdfData.append(pdfDataObj)
 
     def local_batch_to_text(self, pdfFolderPath: str):

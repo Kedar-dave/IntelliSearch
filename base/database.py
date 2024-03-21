@@ -30,9 +30,10 @@ class Database:
         Inserts file objects (Dicts of converted data)
         """
         try:
+            
             files = [
                 self.fs.put(ele.pop("file"), _id=ele.pop("_id"), filename=ele.pop("name"), mime_type=ele.pop("mime_type"), metadata=ele)
-                for ele in data
+            for ele in data
             ]
             
             print(f" Successfully inserted {len(data)} files.")

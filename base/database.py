@@ -3,15 +3,15 @@ import pymongo.errors
 from io import BytesIO  
 from typing import Tuple
 from bson import ObjectId
-from base import MimeType
+from base.constants import MimeType
 from dotenv import load_dotenv
 from gridfs import GridFS, GridOut
 from pymongo.mongo_client import MongoClient
 
+load_dotenv()
 class Database:
     def __init__(self):
         try:
-            load_dotenv()
             self.client = MongoClient(str(os.getenv("URI")))
             
             self.dbName = os.getenv("DB_NAME")
@@ -48,10 +48,10 @@ class Database:
         Inserts a file object(Dicts of converted data)
         """
         try:
-            file  = data.pop("file")
-            name = data.pop("name")
             uid = data.pop("_id")
+            name = data.pop("name")
             mime_type = data.pop("mime_type")
+            file  = data.pop("file")
             self.fs.put(file, _id=uid, filename=name, mime_type=mime_type, metadata=data)
             
             print(f" Successfully inserted {name}.")
@@ -91,9 +91,9 @@ class Database:
                     file_data = {
                         "_id": str(file._id),
                         "name": file.filename,
-                        "size": int(file.length),
                         "metadata": file.metadata,
-                        "mime_type": file.mime_type
+                        "mime_type": file.mime_type,
+                        "size": int(file.length),
                     }
                     files.append(file_data)
                 else:

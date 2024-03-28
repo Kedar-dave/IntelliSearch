@@ -1,58 +1,61 @@
-from io import BufferedReader
-import shutil
 import os
 import json
-from collections import Counter
-from dotenv import load_dotenv
+import httpx
+from bson import ObjectId
+from io import BufferedReader 
+from typing import Tuple
+from dotenv import load_dotenv, find_dotenv
+from base.util import file_finder 
+from base.constants import MimeType, KEYS, TEMPAUDIOFILE
+
+from deepgram import (
+    DeepgramClientOptions, 
+    DeepgramClient, 
+    PrerecordedOptions, 
+    FileSource
+)
+# from txtai.pipeline import Transcription
 from moviepy.editor import VideoFileClip
-
-from txtai.pipeline import Transcription
-
-from deepgram import DeepgramClientOptions, DeepgramClient, PrerecordedOptions, FileSource
-from base.util import *
-
-TEMPAUDIOFILE = 'temp.mp3'
-KEYS = [
-            "transaction_key", "request_id", "sha256", "created",
-            "models", "warnings", "model_info", "summary_info", "words",
-            "search", "confidence", "punctuated_word", "speaker", "speaker_confidence", "summaries",
-            "entities", "translations", "topics", "detected_language",
-            "utterances", "summary"]
-DEEPGRAM_API_KEY = os.environ.get("DG_API_KEY")
 class VideoProcessor:
-    def __init__(self):
+    def __init__(self, verbose:bool = False):
+        find_dotenv()
         load_dotenv()
+        DEEPGRAM_API_KEY = str(os.getenv("DEEPGRAM_API_KEY"))
         self.videoData: list = list()
-        self.transcribe = Transcription(gpu=True)
+        self.videos: list = list()
+        
+        config: DeepgramClientOptions = DeepgramClientOptions(verbose=verbose)
+        self.deepgram: DeepgramClient = DeepgramClient(DEEPGRAM_API_KEY, config)
+        
+        print(" Deepgram Connection Estabilised!!")
 
-        config: DeepgramClientOptions = DeepgramClientOptions(verbose=False)
-        self.deepgram: DeepgramClient = DeepgramClient(
-            DEEPGRAM_API_KEY, config)
-        self.options = PrerecordedOptions(
-            model="nova-2",
-            smart_format=True,
-            utterances=True,
-            punctuate=True,
-            diarize=True)
-
-    def __del__(self):
-        try:
-            os.remove("temp.mp3")
-        except:
-            pass
-
-
-    def __set_video_data(self, name: str, transcription: str,
-                         keywords: list,
-                         duration: float) -> None:
-        docDict = {
-            "type": "video",
-            "name": name,
-            "transcription": transcription,
-            "words": dict(Counter(keywords)),
-            "duration": duration
+    def __set_video_data(self, name: str, transcription: str ,duration: float, video: bytes):
+        uid = ObjectId()
+        
+        videoDataObj = {
+            "_id" : uid,
+            "text": name + ' ' + transcription,
         }
-        self.videoData.append(docDict)
+        self.videoData.append(videoDataObj)
+        
+        videoObj = {
+            "_id": uid,
+            "name": name,
+            "mime_type": MimeType.MP4,
+            "file": video,
+            "seconds": duration
+        }
+        self.videos.append(videoObj)
+    
+    def clear(self) -> bool:
+        try:
+            self.videoData.clear()
+            self.videos.clear()
+            return True
+        except Exception as e:
+            print(f" {e}")
+            return False
+    
 
     def local_batch_to_text(self, videoFolderPath: str):
         """
@@ -67,30 +70,54 @@ class VideoProcessor:
 
     def local_to_text(self, videoName: str,videoFolderPath: str):
         videoPath = os.path.join(videoFolderPath, videoName)
+        with open(videoPath, 'rb') as file:
+            videoBytes = file.read()
+        self.deepgram_transcribe(videoName, videoBytes)    
+    
+    
+    def extract_data(self, videoName: str, video: BufferedReader) -> Tuple[bytes, bytes]:
+        try:
+            # Extracting bytes from the FileStorage object
+            videoBytes = video.read()
 
-        with VideoFileClip(videoPath) as video:
-            audioClip = video.audio
-            audioClip.write_audiofile(TEMPAUDIOFILE ,codec="mp3", verbose=False, logger=None)
-            with open(TEMPAUDIOFILE, "rb") as file:
-                audioFileBuffer = file.read()
-            transcript = self.deepgram_transcribe(audioFileBuffer)
-            keywords = transform_text(transcript["transcript"])
-            self.__set_video_data( videoName, transcript["transcript"], keywords, transcript["duration"])
-            os.remove(os.path(TEMPAUDIOFILE))
+            with open(videoName, "wb") as temp_file:
+                temp_file.write(videoBytes)
+
+            video_clip = VideoFileClip(videoName)
+            audio_clip = video_clip.audio
+            audio_clip.write_audiofile(TEMPAUDIOFILE)
+            
+            with open(TEMPAUDIOFILE, "rb") as audio:
+                audioBuffer = audio.read()
+
+            return audioBuffer, videoBytes
+            
+        except Exception as e:
+            print("Error during audio extraction:", e)
+            return None
+
+
+    def deepgram_transcribe(self, videoName: str, video: BufferedReader):
         
-
-    def deepgram_transcribe(self, audioFileBuffer: BufferedReader) -> dict:
-
+        audioFileBuffer, videoBytes = self.extract_data(videoName, video)
+    
         payload: FileSource = {"buffer": audioFileBuffer}
-
-        fileResponse = self.deepgram.listen.prerecorded.v(
-            "1").transcribe_file(payload, self.options)
-
+        OPTIONS = PrerecordedOptions(
+            model="nova-2",
+            smart_format=True,
+            utterances=True,
+            punctuate=True,
+            diarize=True)
+        fileResponse = self.deepgram.listen.prerecorded.v("1").transcribe_file(payload, OPTIONS, timeout=httpx.Timeout(300.0, connect=10.0))
         res = fileResponse.to_json()
         res = json.loads(res)
         self.__purge_keys(res)
-        response = self.__fmt(res)
-        return response
+        response = self.__fmt(res)  
+        self.__set_video_data(videoName, response["transcript"], response["duration"], videoBytes)
+        os.remove(videoName)
+        os.remove(TEMPAUDIOFILE)
+
+        print(" Video Processed!")
 
     def __purge_keys(self, data: dict):
 

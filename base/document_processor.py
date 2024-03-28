@@ -3,15 +3,17 @@ import pickle
 import PyPDF2
 from bson import ObjectId
 from io import BufferedReader
-from base import MimeType, file_finder,text_cleaning
-
+from base.util import file_finder,text_cleaning
+from base.constants import MimeType
 class DocumentProcessor:
 
     def __init__(self):
         self.pdfData: list = list()
         self.pdfs: list = list()
 
-    def __set_pdf_data(self, name: str, text: str, pdf, pages: int ):
+        print(" Document Processor Connection Estabilished!!")
+
+    def __set_pdf_data(self, name: str, text: str, pdf: bytes, pages: int ):
 
         uid = ObjectId()
         pdfDataObj = {
@@ -74,7 +76,7 @@ class DocumentProcessor:
     def clear(self) -> bool:
         try:
             self.pdfData.clear()
-            self.pdfList.clear()
+            self.pdfs.clear()
             return True
         except Exception as e:
             print(f" {e}")
@@ -83,12 +85,12 @@ class DocumentProcessor:
     def save_pdf(self,name:str):
         os.makedirs('./cache/', exist_ok=True)
         with open(f"./cache/{name}.pkl", "wb") as file:
-            pickle.dump(self.pdfList,file)
+            pickle.dump(self.pdfs,file)
     
     def load_pdf(self,name:str):
         data = list()
         with open(f"./cache/{name}.pkl", "rb") as file:
             data = pickle.load(file)
         for obj in data:
-            self.pdfList.append(obj)
+            self.pdfs.append(obj)
         print("Pdf Loaded")

@@ -1,29 +1,12 @@
 import os
 import shutil
 from bson import ObjectId
-from dotenv import load_dotenv
 from txtai.embeddings import Embeddings
 from typing_extensions import Any, Tuple
 from base.util import to_int,to_objectid
+from base.constants import CLOUD_CONFIG, CONNECTION_STRING, DIRECTORY
 from azure.storage.blob import BlobServiceClient
 
-load_dotenv()
-
-DIRECTORY = './index'
-
-CLOUD_CONFIG ={
-    "provider": os.getenv("PROVIDER"),
-    "access_key": os.getenv("ACCESS_KEY"),
-    "container": os.getenv("CONTAINER"),
-    "access_secret": os.getenv("ACCESS_SECRET"), 
-    "default_endpoints_protocol": os.getenv("DEFAULT_ENDPOINTS_PROTOCOL"),
-    "endpoint_suffix": os.getenv("ENDPOINT_SUFFIX"),
-    "region": os.getenv("REGION")
-}
-CONNECTION_STRING = f"DefaultEndpointsProtocol={CLOUD_CONFIG['default_endpoints_protocol']};" \
-                     f"AccountName={CLOUD_CONFIG['access_key']};" \
-                     f"AccountKey={CLOUD_CONFIG['access_secret']};" \
-                     f"EndpointSuffix={CLOUD_CONFIG['endpoint_suffix']}"
 class Vectorizer:
 
     def __init__(self):
@@ -79,7 +62,7 @@ class Vectorizer:
         Appends index records as batch
         """
         try:
-            dataList = [ ( to_int(doc['_id']) ,doc , None) for doc in data]
+            dataList = [(to_int(doc.pop('_id')), doc, None) for doc in data]
 
             self.embeddings.upsert(dataList)
             return True
@@ -107,6 +90,8 @@ class Vectorizer:
                 containerClient.delete_blob(blob.name)
     
             shutil.rmtree(DIRECTORY)
+
+            print(f" Index: {name.upper()} deleted!!")
             return True        
         except FileNotFoundError:
             print(f"Directory '{DIRECTORY}' does not exist.")

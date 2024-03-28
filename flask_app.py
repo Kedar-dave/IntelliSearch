@@ -1,11 +1,22 @@
 import os
 from bson import ObjectId
 from dotenv import load_dotenv
-from base import DocumentProcessor, Vectorizer, Database, MimeType
-from flask import Flask, request, jsonify, send_file, render_template
+from base import (
+    DocumentProcessor, 
+    VideoProcessor, 
+    Vectorizer, 
+    Database)
+from base.constants import MimeType
+from flask import (
+    Flask, 
+    request, 
+    jsonify, 
+    send_file, 
+    render_template)
 
 load_dotenv()
 docProcessor = DocumentProcessor()
+vidProcessor = VideoProcessor(verbose=False)
 vectors = Vectorizer()
 db = Database()
 
@@ -29,19 +40,25 @@ def insert():
             if mime_type == MimeType.PDF:
                 docProcessor.ocr(name, file)
 
-            elif mime_type == MimeType.VIDEO:
-                continue
+            elif mime_type in (MimeType.MP4, MimeType.AVI, MimeType.MOV, MimeType.MKV):
+                print("in video loop")
+                vidProcessor.deepgram_transcribe(name, file)
         
         isProcessed: bool = False
-
+        isPdfProcessed: bool = False
+        isVidProcessed: bool = False
         if collectionTypes.intersection([MimeType.PDF]):
             if vectors.semantic_index(docProcessor.pdfData): 
-                if db.batch_insert(docProcessor.pdfList): 
+                if db.batch_insert(docProcessor.pdfs): 
                     docProcessor.clear()
-                    isProcessed = True
-        if collectionTypes.intersection([MimeType.VIDEO]):
-            pass
-        
+                    isPdfProcessed = True
+        if collectionTypes.intersection([MimeType.MP4, MimeType.AVI, MimeType.MOV, MimeType.MKV]):
+             if vectors.semantic_index(vidProcessor.videoData): 
+                if db.batch_insert(vidProcessor.videos): 
+                    vidProcessor.clear()
+                    isVidProcessed = True
+
+        isProcessed = isPdfProcessed or isVidProcessed
         if isProcessed:
             vectors.save_cloud(INDEXNAME)
             return jsonify({'msg': f'{len(files)} files Uploaded \nFile Names: {names}'}), 200
@@ -111,9 +128,10 @@ def index():
     return render_template('index.html')
 
 if __name__ == '__main__':
-    PORT = int(os.getenv("PORT"))
-    HOST = str(os.getenv("HOST"))
-    app.run(host=HOST, port=PORT, debug=True)
+    # PORT = int(os.getenv("PORT"))
+    # HOST = str(os.getenv("HOST"))
+    # app.run(host=HOST, port=PORT, debug=True)
+    app.run(port=5000, debug=True)
     # Use Gunicorn to serve the Flask app with multiple workers
     # gunicorn -w 4 -b 0.0.0.0:5000 your_app_module:app
 

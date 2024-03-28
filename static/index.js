@@ -52,6 +52,8 @@ uploadButton.addEventListener('click', function () {
     } else {
         for (var i = 0; i < files.length; i++) {
             var file = files[i];
+            console.log(file.name)
+            console.log(file.type)
             formData.append('files[]', file);
             formData.append('names[]', file.name); // Include file names as array
             formData.append('mime_types[]', file.type); // Include file types as array
@@ -182,8 +184,6 @@ searchButton.addEventListener('click', function () {
     performSearch(query, limit);
 });
 function performSearch(query, limit) {
-    // const url = `?query=${encodeURIComponent(query)}&limit=${encodeURIComponent(limit)}`;
-
     // Make a GET request to the server
     fetch("/api/search", {
         method: 'POST',
@@ -214,7 +214,6 @@ function performSearch(query, limit) {
 }
 
 function getFileContent(fileId) {
-    // const url = `?_id=${encodeURIComponent(fileId)}`;
 
     // Fetch the file content from the server
     fetch("/api/getfile", {
@@ -235,11 +234,36 @@ function getFileContent(fileId) {
             if (fileType === 'application/pdf') {
                 const fileUrl = URL.createObjectURL(blob);
                 window.open(fileUrl, '_blank');
-            } else if (fileType === 'application/video') {
-                // Embed videos directly in the webpage
-                const videoUrl = URL.createObjectURL(blob);
-                // Implement code to embed videos (e.g., using <video> tag)
-            } else {
+            } else if (fileType.startsWith('video/')) {
+                const videoContainer = document.createElement('div');
+                videoContainer.style.position = 'relative';
+                const videoElement = document.createElement('video');
+                videoElement.controls = true;
+                videoElement.autoplay = false;
+                videoElement.style.width = '100%';
+                videoElement.style.height = '100%';
+                const fileUrl = URL.createObjectURL(blob);
+                videoElement.src = fileUrl;
+                videoContainer.appendChild(videoElement);
+
+                const newTabContent = document.implementation.createHTMLDocument('Video');
+                const newTabBody = newTabContent.body;
+
+                // Create a div to hold the video and close button
+                const videoContainerInNewTab = document.createElement('div');
+                // Clone the video element and append it to the div
+                const clonedVideoElement = videoElement.cloneNode(true);
+                videoContainerInNewTab.appendChild(clonedVideoElement);
+
+                // Append the div to the body of the new document
+                newTabBody.appendChild(videoContainerInNewTab);
+                newTabBody.style.backgroundColor = 'rgb(17, 24, 39)';
+                // Open the new document in a new tab
+                const newTab = window.open();
+                newTab.document.write(newTabContent.documentElement.outerHTML);
+                delete videoContainer;
+            }
+            else {
                 // Handle other file types accordingly
                 console.error('Unsupported file type:', fileType);
             }
@@ -247,6 +271,7 @@ function getFileContent(fileId) {
         .catch(error => {
             console.error('Error:', error.message);
         });
+
 }
 function displaySearchResults(data) {
     // Clear the search container
@@ -255,13 +280,14 @@ function displaySearchResults(data) {
     // Check if data contains files and scores
     if (data.files && data.scores) {
         var containerDiv = document.createElement('div');
-        containerDiv.classList.add('flex', 'justify-center');
+        containerDiv.classList.add('flex', 'flex-col', 'justify-center');
 
         var queryLog = document.getElementById('query').value;
         var queryLogDiv = document.createElement('div');
-        queryLogDiv.classList.add('text-2xl', 'text-center', 'text-white-500', 'bg-gray-700');
-        queryLogDiv.innerHTML = `Query: ${queryLog}`
-
+        var innerQueryDiv = document.createElement('div');
+        innerQueryDiv.classList.add('w-[90%]', 'flex', 'justify-start', 'align-left', 'text-2xl', 'mx-auto', 'text-center', 'text-white-500', 'bg-gray-700');
+        innerQueryDiv.innerHTML = `Query: ${queryLog}`
+        queryLogDiv.appendChild(innerQueryDiv)
         var tableDiv = document.createElement('div');
         tableDiv.classList.add('w-full', 'table-container'); // Add 'table-container' class
 
@@ -324,7 +350,9 @@ function displaySearchResults(data) {
             row.appendChild(sizeCell);
 
             var typeCell = document.createElement('td');
-            typeCell.textContent = file.mime_type.replace('application/', '').toUpperCase();
+            typeCell.textContent = file.mime_type.split('/')
+                .pop()
+                .toUpperCase();
             typeCell.classList.add('px-6', 'py-4');
             row.appendChild(typeCell);
 
@@ -374,11 +402,12 @@ function displaySearchResults(data) {
         tableDiv.appendChild(table);
 
         // Append the table div to the container div
+        containerDiv.appendChild(queryLogDiv);
+
         containerDiv.appendChild(tableDiv);
 
-        queryLogDiv.appendChild(containerDiv);
         // Append the container div to the search container
-        searchResultsContainer.appendChild(queryLogDiv);
+        searchResultsContainer.appendChild(containerDiv);
     } else {
         // Display a message if no files are found
         searchResultsContainer.textContent = 'No files found';
@@ -415,20 +444,3 @@ function formatFileSize(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-function readFile(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-
-        reader.onload = () => {
-            const arrayBuffer = reader.result;
-            resolve(arrayBuffer);
-        };
-
-        reader.onerror = () => {
-            reader.abort();
-            reject(new Error('Error reading file.'));
-        };
-
-        reader.readAsArrayBuffer(file);
-    });
-}

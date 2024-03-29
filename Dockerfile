@@ -23,7 +23,7 @@ COPY . .
 EXPOSE 9000
 
 # Set FLASK_APP environment variable
-ENV FLASK_APP=flask_app.py
+# ENV FLASK_APP=flask_app.py
 
 # Run Flask app
-CMD ["flask", "run"]
+CMD ["python", "flask_app.py"]

@@ -128,14 +128,9 @@ def serve_file():
 def index():
     return render_template('index.html')
 
-@app.route('/favicon.ico')
-def favicon():
-    return send_from_directory(os.path.join(app.root_path, 'static'),
-                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
-
 if __name__ == '__main__':
     PORT = int(os.getenv("PORT"))
-    app.run(port=PORT)
+    app.run(host='0.0.0.0', port=PORT)
     # app.run(port=5000, debug=True)
     # Use Gunicorn to serve the Flask app with multiple workers
     # gunicorn -w 4 -b 0.0.0.0:5000 your_app_module:app

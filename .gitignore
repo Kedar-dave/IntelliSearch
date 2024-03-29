@@ -8,3 +8,4 @@ data/
 *resume-dataset*/
 ans/
 streamlit_app.py
+!templates/

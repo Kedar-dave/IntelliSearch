@@ -38,12 +38,14 @@ toggleSeachButton.addEventListener('click', function () {
     uploadForm.classList.add('hidden');
     uploadForm.classList.remove('active');
     searchResultsContainer.classList.remove('hidden');
+    searchResultsContainer.innerHTML = '';
 });
 
 uploadButton.addEventListener('click', function () {
     loadingScreen.classList.remove('hidden');
     loadingScreen.classList.add('flex');
     var files = fileInput.files;
+    numOfFiles = (files.length);
     var formData = new FormData();
     if (files.length == 0) {
         loadingScreen.classList.add('hidden');
@@ -73,7 +75,7 @@ uploadButton.addEventListener('click', function () {
                 uploadedFilesContainer.innerHTML = '';
                 fileInput.value = '';
                 loadingScreen.classList.add('hidden');
-                showModal('success',"Files Uploaded",`${files.length + 1} files uploaded`)
+                showModal('success',"Files Uploaded",`${numOfFiles} files uploaded!`)
             })
             .catch(error => {
                 showModal('error','Error', error.message);

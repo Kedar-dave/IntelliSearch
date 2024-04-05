@@ -47,13 +47,12 @@ uploadButton.addEventListener('click', function () {
     var formData = new FormData();
     if (files.length == 0) {
         loadingScreen.classList.add('hidden');
-        alert("No Files to Upload!");
+        showModal('warning', "Empty Selection", "No files have been selected!")
         return;
     } else {
         for (var i = 0; i < files.length; i++) {
             var file = files[i];
-            console.log(file.name)
-            console.log(file.type)
+            
             formData.append('files[]', file);
             formData.append('names[]', file.name); // Include file names as array
             formData.append('mime_types[]', file.type); // Include file types as array
@@ -74,10 +73,10 @@ uploadButton.addEventListener('click', function () {
                 uploadedFilesContainer.innerHTML = '';
                 fileInput.value = '';
                 loadingScreen.classList.add('hidden');
-                alert("Files Uploaded")
+                showModal('success',"Files Uploaded",`${files.length + 1} files uploaded`)
             })
             .catch(error => {
-                console.error('Error:', error.message);
+                showModal('error','Error', error.message);
                 loadingScreen.classList.add('hidden');
             });
 
@@ -172,16 +171,20 @@ searchButton.addEventListener('click', function () {
     var limit = document.getElementById('limit').value;
 
     if (!query) {
-        alert('Please enter a search query');
+        showModal('warning','Warning', 'Please enter a search query');
+        loadingScreen.classList.add('hidden');
         return;
     }
 
     if (!limit || isNaN(parseInt(limit)) || parseInt(limit) <= 0) {
-        alert('Please enter a valid result limit');
+        showModal('warning','Warning', 'Please enter a valid result limit');
+        loadingScreen.classList.add('hidden');
         return;
     }
 
-    performSearch(query, limit);
+    if (query && limit){
+        performSearch(query, limit);
+    }
 });
 function performSearch(query, limit) {
     // Make a GET request to the server
@@ -204,12 +207,11 @@ function performSearch(query, limit) {
             document.getElementById('query').value = '';
             document.getElementById('limit').value = 5;
             loadingScreen.classList.add('hidden');
-
+            showModal('success', 'Success', 'Results Found!')
         })
         .catch(error => {
-            console.error('Error:', error.message);
             loadingScreen.classList.add('hidden');
-
+            showModal('error', 'Error', error.message)
         });
 }
 
@@ -265,11 +267,12 @@ function getFileContent(fileId) {
             }
             else {
                 // Handle other file types accordingly
-                console.error('Unsupported file type:', fileType);
+                showModal('error', 'Error',`Unsupported file type: ${fileType}`);
+                 
             }
         })
         .catch(error => {
-            console.error('Error:', error.message);
+            showModal('error', 'Error', error.message);
         });
 
 }
@@ -283,16 +286,23 @@ function displaySearchResults(data) {
         containerDiv.classList.add('flex', 'flex-col', 'justify-center');
 
         var queryLog = document.getElementById('query').value;
-        var queryLogDiv = document.createElement('div');
-        var innerQueryDiv = document.createElement('div');
-        innerQueryDiv.classList.add('w-[90%]', 'flex', 'justify-start', 'align-left', 'text-2xl', 'mx-auto', 'text-center', 'text-white-500', 'bg-gray-700');
-        innerQueryDiv.innerHTML = `Query: ${queryLog}`
-        queryLogDiv.appendChild(innerQueryDiv)
+        var statsDiv = document.createElement('div');
+        statsDiv.classList.add('w-[80%]', 'flex', 'justify-evenly', 'align-left', 'text-2xl', 'mx-auto', 'text-center', 'text-white-500', 'bg-gray-900', 'border-x-4', 'border-t-4', 'border-pink-700','py-4');
+        
+        var queryDiv = document.createElement('div');
+        queryDiv.innerHTML = `Query: ${queryLog}`
+
+        var timeDiv = document.createElement('div');
+        // queryDiv.classList.add('w-[90%]', 'flex', 'justify-start', 'align-left', 'text-2xl', 'mx-auto', 'text-center', 'text-white-500', 'bg-gray-700');
+        timeDiv.innerHTML = `Time Taken: ${data.searchTime}s`
+
+        statsDiv.appendChild(queryDiv)
+        statsDiv.appendChild(timeDiv)
         var tableDiv = document.createElement('div');
         tableDiv.classList.add('w-full', 'table-container'); // Add 'table-container' class
 
         var table = document.createElement('table');
-        table.classList.add('w-[90%]', 'mx-auto', 'text-sm', 'text-left', 'rtl:text-right', 'text-white-500', 'border-4', 'border-pink-700');
+        table.classList.add('w-[80%]', 'mx-auto', 'text-sm', 'text-left', 'rtl:text-right', 'text-white-500', 'border-4', 'border-pink-700');
 
         var tableHeader = document.createElement('thead');
         tableHeader.classList.add('text-md', 'text-gray-700', 'uppercase', 'bg-gray-700');
@@ -402,7 +412,7 @@ function displaySearchResults(data) {
         tableDiv.appendChild(table);
 
         // Append the table div to the container div
-        containerDiv.appendChild(queryLogDiv);
+        containerDiv.appendChild(statsDiv);
 
         containerDiv.appendChild(tableDiv);
 
@@ -410,7 +420,7 @@ function displaySearchResults(data) {
         searchResultsContainer.appendChild(containerDiv);
     } else {
         // Display a message if no files are found
-        searchResultsContainer.textContent = 'No files found';
+        showModal('warning', 'Warning', 'No files Found!')
     }
 }
 function deleteFile(fileId) {
@@ -428,10 +438,10 @@ function deleteFile(fileId) {
             return response.json();
         })
         .then(data => {
-            console.log(data.msg);
+            showModal('success', 'Success', "File Deleted!")
         })
         .catch(error => {
-            console.error('Error:', error.message);
+            showModal('error', 'Error', error.message);
         });
 }
 

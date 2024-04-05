@@ -128,3 +128,14 @@ a:hover {
     transition: background-color 0.3s ease, color 0.3s ease;
     cursor: pointer;
 }
+
+  /* Modal styles */
+  .modal {
+    display: none; /* Hidden by default */
+  }
+
+  /* Modal content */
+  .modal-content {
+    max-width: 500px; /* Adjust width as needed */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }

@@ -1,4 +1,8 @@
 import os
+import time
+import psutil
+from random import uniform
+from pprint import pprint
 from bson import ObjectId
 from dotenv import load_dotenv
 from base import (
@@ -12,9 +16,11 @@ from flask import (
     request, 
     jsonify, 
     send_file,
-    send_from_directory, 
     render_template)
 
+
+# Create a Flask application
+app = Flask(__name__)
 load_dotenv()
 docProcessor = DocumentProcessor()
 vidProcessor = VideoProcessor(verbose=False)
@@ -25,10 +31,12 @@ INDEXNAME = str(os.getenv("INDEX"))
 vectors.load_cloud(INDEXNAME)
 
 app = Flask(__name__)
-
+intervalTime: float = float() 
 @app.route('/api/insert', methods=['POST'])
 def insert():
+    global intervalTime
     try:
+        start = time.time()  
         files = request.files.getlist('files[]') 
         names = request.form.getlist('names[]')  
         mimeTypes = request.form.getlist('mime_types[]')  
@@ -62,6 +70,8 @@ def insert():
         isProcessed = isPdfProcessed or isVidProcessed
         if isProcessed:
             vectors.save_cloud(INDEXNAME)
+            end = time.time()
+            intervalTime = end - start
             return jsonify({'msg': f'{len(files)} files Uploaded \nFile Names: {names}'}), 200
 
     except Exception as e:
@@ -71,7 +81,9 @@ def insert():
 
 @app.route('/api/delete', methods=['POST'])
 def delete():
+    global intervalTime
     try:
+        start = time.time()
         data = request.json
         _id = ObjectId(data.get('id'))
         prevCount = vectors.count()
@@ -79,8 +91,12 @@ def delete():
         currCount = vectors.count() 
         if ifFilesDeleted and ((prevCount - currCount)==1):
             vectors.save_cloud(INDEXNAME)
+            end = time.time()
+            intervalTime = end - start
             return jsonify({"msg": f" Document with id:{_id} Deleted"}), 200
         else:
+            end = time.time()
+            intervalTime = end - start
             return jsonify({"msg": f"Document with id:{_id} not Found"}), 404
     except Exception as e:
         print(f" {e}")
@@ -91,13 +107,18 @@ def search():
     file_id is a list of bson ObjectIds
     """
     try:
+        global intervalTime
+        start = time.time()
         data = request.json
         query = data.get('query')
         limit = int(data.get('limit'))          
         hexIndices, scores = vectors.semantic_search(query, limit)
         files = db.retrieve_results(hexIndices)
+        end = time.time()
+        searchTime = float("{:.4f}".format(end - start))
+        intervalTime = end - start
         if files:
-            return jsonify({'files': files, 'scores':scores}), 200
+            return jsonify({'files': files, 'scores':scores, 'searchTime': searchTime}), 200
         else:
             return "Files not found", 404
         
@@ -108,6 +129,8 @@ def search():
 @app.route('/api/getfile', methods=["POST"])
 def serve_file():
     try:
+        global intervalTime
+        start = time.time()
         data = request.json
         _id = ObjectId(data.get('file_id'))
         filename, mime_type, file  = db.retrieve_file(_id)
@@ -119,6 +142,8 @@ def serve_file():
                         download_name=filename)
         
         response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+        end = time.time()
+        intervalTime = end - start
         return response
         
     except Exception as e:
@@ -128,9 +153,28 @@ def serve_file():
 def index():
     return render_template('index.html')
 
+# Function to get CPU and memory usage
+def get_usage(interval: float):
+    process = psutil.Process()
+    cpu_percent = process.cpu_percent(interval=interval)
+    mem = process.memory_info()
+    mem_percent = (mem.rss / (1024 ** 2))  # Converting bytes to MB
+    return cpu_percent, mem_percent
+
+@app.after_request
+def log_usage(response):
+    global intervalTime
+    print(f' API call time: {intervalTime}')
+    reqTime = intervalTime +  intervalTime/2
+    if reqTime < 0: reqTime = 0
+    cpu_percent, mem_percent = get_usage(interval=reqTime)
+    pprint({ "CPU Usage": f'{cpu_percent}%' ,'Memory Usage': f'{mem_percent} MB'})
+    return response
+
+
 if __name__ == '__main__':
     PORT = int(os.getenv("PORT"))
-    app.run(host='0.0.0.0', port=PORT)
+    app.run(port=PORT, debug=True)
     # app.run(port=5000, debug=True)
     # Use Gunicorn to serve the Flask app with multiple workers
     # gunicorn -w 4 -b 0.0.0.0:5000 your_app_module:app

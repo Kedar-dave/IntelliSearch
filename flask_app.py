@@ -1,8 +1,6 @@
 import os
 import time
 import psutil
-from random import uniform
-from pprint import pprint
 from bson import ObjectId
 from dotenv import load_dotenv
 from base import (
@@ -31,7 +29,8 @@ INDEXNAME = str(os.getenv("INDEX"))
 vectors.load_cloud(INDEXNAME)
 
 app = Flask(__name__)
-intervalTime: float = float() 
+intervalTime: float = float()
+
 @app.route('/api/insert', methods=['POST'])
 def insert():
     global intervalTime
@@ -41,18 +40,19 @@ def insert():
         names = request.form.getlist('names[]')  
         mimeTypes = request.form.getlist('mime_types[]')  
         collectionTypes = set(mimeTypes)
-        # Ensure all lists have the same length
+        
         if len(files) != len(names) or len(files) != len(mimeTypes):
             raise ValueError("File data lists have different lengths.")
         
         for file, name, mime_type in zip(files, names, mimeTypes):
-            if mime_type == MimeType.PDF:
-                docProcessor.ocr(name, file)
+            match mime_type:
+                case MimeType.PDF:
+                    docProcessor.ocr(name, file)
+                case (MimeType.MP4, MimeType.AVI, MimeType.MOV, MimeType.MKV):
+                    vidProcessor.deepgram_transcribe(name, file)
+                case _:
+                    continue
 
-            elif mime_type in (MimeType.MP4, MimeType.AVI, MimeType.MOV, MimeType.MKV):
-                print("in video loop")
-                vidProcessor.deepgram_transcribe(name, file)
-        
         isProcessed: bool = False
         isPdfProcessed: bool = False
         isVidProcessed: bool = False
@@ -154,8 +154,7 @@ def index():
     return render_template('index.html')
 
 # Function to get CPU and memory usage
-def get_usage(interval: float):
-    process = psutil.Process()
+def get_usage(process: psutil.Process, interval: float):
     cpu_percent = process.cpu_percent(interval=interval)
     mem = process.memory_info()
     mem_percent = (mem.rss / (1024 ** 2))  # Converting bytes to MB
@@ -165,10 +164,18 @@ def get_usage(interval: float):
 def log_usage(response):
     global intervalTime
     print(f' API call time: {intervalTime}')
-    reqTime = intervalTime +  intervalTime/2
-    if reqTime < 0: reqTime = 0
-    cpu_percent, mem_percent = get_usage(interval=reqTime)
-    pprint({ "CPU Usage": f'{cpu_percent}%' ,'Memory Usage': f'{mem_percent} MB'})
+    process = psutil.Process()
+    stepTime = 0
+    max_cpu_percent, max_mem_percent = 0.0,0.0
+    while stepTime <= intervalTime:
+        cpu_percent, mem_percent = get_usage(process,interval=(intervalTime+stepTime))
+        
+        max_cpu_percent = max(max_cpu_percent, cpu_percent)
+        max_mem_percent = max(max_mem_percent, mem_percent)
+
+        stepTime += 0.1
+
+    print( f" CPU Usage: {max_cpu_percent}% \n Memory Usage: {max_mem_percent} MB")
     return response
 
 

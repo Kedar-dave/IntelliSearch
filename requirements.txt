@@ -1,4 +1,5 @@
-azure_storage==0.37.0
+apache-libcloud==3.8.0
+azure-storage-blob==12.8.1 
 deepgram_sdk==3.0.2
 Flask==2.2.5
 httpx==0.27.0

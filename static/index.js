@@ -54,10 +54,10 @@ uploadButton.addEventListener('click', function () {
     } else {
         for (var i = 0; i < files.length; i++) {
             var file = files[i];
-            
+
             formData.append('files[]', file);
             formData.append('names[]', file.name); // Include file names as array
-            formData.append('mime_types[]', file.type); // Include file types as array
+            formData.append('mime_types[]', file.type); // Include file types as array      
         }
         // Make a POST request to /api/batch_insert endpoint
         fetch('/api/insert', {
@@ -75,10 +75,10 @@ uploadButton.addEventListener('click', function () {
                 uploadedFilesContainer.innerHTML = '';
                 fileInput.value = '';
                 loadingScreen.classList.add('hidden');
-                showModal('success',"Files Uploaded",`${numOfFiles} files uploaded!`)
+                showModal('success', "Files Uploaded", `${numOfFiles} files uploaded!`)
             })
             .catch(error => {
-                showModal('error','Error', error.message);
+                showModal('error', 'Error', error.message);
                 loadingScreen.classList.add('hidden');
             });
 
@@ -173,18 +173,18 @@ searchButton.addEventListener('click', function () {
     var limit = document.getElementById('limit').value;
 
     if (!query) {
-        showModal('warning','Warning', 'Please enter a search query');
+        showModal('warning', 'Warning', 'Please enter a search query');
         loadingScreen.classList.add('hidden');
         return;
     }
 
     if (!limit || isNaN(parseInt(limit)) || parseInt(limit) <= 0) {
-        showModal('warning','Warning', 'Please enter a valid result limit');
+        showModal('warning', 'Warning', 'Please enter a valid result limit');
         loadingScreen.classList.add('hidden');
         return;
     }
 
-    if (query && limit){
+    if (query && limit) {
         performSearch(query, limit);
     }
 });
@@ -253,30 +253,39 @@ function getFileContent(fileId) {
                 const newTabContent = document.implementation.createHTMLDocument('Video');
                 const newTabBody = newTabContent.body;
 
-                // Create a div to hold the video and close button
-                const videoContainerInNewTab = document.createElement('div');
-                // Clone the video element and append it to the div
-                const clonedVideoElement = videoElement.cloneNode(true);
-                videoContainerInNewTab.appendChild(clonedVideoElement);
+                if (newTabBody) {
+                    // Create a div to hold the video and close button
+                    const videoContainerInNewTab = document.createElement('div');
+                    // Clone the video element and append it to the div
+                    const clonedVideoElement = videoElement.cloneNode(true);
+                    videoContainerInNewTab.appendChild(clonedVideoElement);
 
-                // Append the div to the body of the new document
-                newTabBody.appendChild(videoContainerInNewTab);
-                newTabBody.style.backgroundColor = 'rgb(17, 24, 39)';
-                // Open the new document in a new tab
-                const newTab = window.open();
-                newTab.document.write(newTabContent.documentElement.outerHTML);
+                    // Append the div to the body of the new document
+                    newTabBody.appendChild(videoContainerInNewTab);
+                    newTabBody.style.backgroundColor = 'rgb(17, 24, 39)';
+                    // Open the new document in a new tab
+                    const newTab = window.open();
+
+                    if (newTab) {
+                        newTab.document.write(newTabContent.documentElement.outerHTML);
+                    } else {
+                        showModal('error', 'Error', 'Failed to open new tab \nPlease Disable Popups to view videos');
+                    }
+                } else {
+                    showModal('error', 'Error', 'Document body not available');
+                }
+
+
                 delete videoContainer;
             }
             else {
-                // Handle other file types accordingly
-                showModal('error', 'Error',`Unsupported file type: ${fileType}`);
-                 
+                showModal('error', 'Error', `Unsupported file type: ${fileType}`);
+
             }
         })
         .catch(error => {
             showModal('error', 'Error', error.message);
         });
-
 }
 function displaySearchResults(data) {
     // Clear the search container
@@ -289,8 +298,8 @@ function displaySearchResults(data) {
 
         var queryLog = document.getElementById('query').value;
         var statsDiv = document.createElement('div');
-        statsDiv.classList.add('w-[80%]', 'flex', 'justify-evenly', 'align-left', 'text-2xl', 'mx-auto', 'text-center', 'text-white-500', 'bg-gray-900', 'border-x-4', 'border-t-4', 'border-pink-700','py-4');
-        
+        statsDiv.classList.add('w-[80%]', 'flex', 'justify-evenly', 'align-left', 'text-2xl', 'mx-auto', 'text-center', 'text-white-500', 'bg-gray-900', 'border-x-4', 'border-t-4', 'border-pink-700', 'py-4');
+
         var queryDiv = document.createElement('div');
         queryDiv.innerHTML = `Query: ${queryLog}`
 

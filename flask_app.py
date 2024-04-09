@@ -48,7 +48,8 @@ def insert():
             match mime_type:
                 case MimeType.PDF:
                     docProcessor.ocr(name, file)
-                case (MimeType.MP4, MimeType.AVI, MimeType.MOV, MimeType.MKV):
+                case MimeType.MP4 | MimeType.AVI | MimeType.MKV | MimeType.MOV:
+                    print("in")
                     vidProcessor.deepgram_transcribe(name, file)
                 case _:
                     continue
@@ -185,6 +186,7 @@ if __name__ == '__main__':
     HOST = host_env if host_env else '0.0.0.0'
     debug_env = bool(os.getenv("DEBUG"))
     DEBUG = debug_env if debug_env else False
+
     app.run(host=HOST,port=PORT, debug=DEBUG)
     # app.run(port=5000, debug=True)
     # Use Gunicorn to serve the Flask app with multiple workers
